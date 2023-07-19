@@ -17,7 +17,6 @@ AppDataSource.initialize().then(async () => {
 
     const staticPort = 3050;
     const port = process.env.PORT || staticPort;
-    console.log({port});
     app.set('port', port);
 
     const server =  new InversifyExpressServer(container, null, { rootPath: "/" }, app);
