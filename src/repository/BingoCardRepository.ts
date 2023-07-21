@@ -8,10 +8,14 @@ export class BingoCardRepository{
     private bingocardRepository = AppDataSource.getRepository(BingoCard);
     
     async findAll(): Promise<BingoCard[]>{
-        return await this.bingocardRepository.find();
+        return await this.bingocardRepository.find({
+            order: {
+                number_table: 'ASC'
+            }
+        });
     }
     async findById(id: number): Promise<BingoCard | null>{
-        return await this.bingocardRepository.findOne({where: {number_table: id}});
+        return await this.bingocardRepository.findOne({where: {id: id}});
     }
     async findByNumberCard(number_card: number){
         return await this.bingocardRepository.findOne({where: {number_table: number_card}});

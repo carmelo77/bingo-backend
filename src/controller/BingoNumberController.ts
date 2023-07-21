@@ -75,7 +75,6 @@ export class BingoNumberController {
                 const tablesWinners = [];
 
                 for (const winner of winners) {
-                    // const bingoc = await this.bingocardRepo.findById(  );
                     tablesWinners.push(winner.bingo_card_id);
                     await this.bingocardRepo.isSkipTrue(winner.bingo_card_id);
                 }
