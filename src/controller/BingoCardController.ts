@@ -41,7 +41,7 @@ export class BingoCardController {
         }
     }
 
-    @httpGet("/number-table", TYPES.AuthAdminMiddleware)
+    @httpGet("/number-table", TYPES.AuthMiddleware)
     public async listOneNumberTable(@queryParam("number_card") number_card: number, @response() res: express.response) {
         try {
             const data = await this.bingoCardRepo.findByNumberCard(number_card);
