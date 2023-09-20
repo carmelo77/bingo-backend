@@ -3,6 +3,8 @@ import * as express from 'express';
 import { controller, httpGet, httpPost, request, response, queryParam, httpPut, httpDelete } from "inversify-express-utils";
 import { BingoNumberRepository } from "../repository/BingoNumberRepository";
 import { BingoCardRepository } from "../repository/BingoCardRepository";
+import { TypeCardWinnerRepository } from "../repository/TypeCardWinnerRepository";
+import { UserRepository } from "../repository/UserRepository";
 import { inject } from "inversify";
 
 @controller("/bingo-number")
@@ -11,12 +13,18 @@ export class BingoNumberController {
 
     private bingoNumberRepo: BingoNumberRepository;
     private bingocardRepo: BingoCardRepository;
+    private typeCardWinnerRepo: TypeCardWinnerRepository;
+    private userRepository: UserRepository;
 
     constructor(
         @inject(TYPES.BingoNumberRepository) bingoNumberRepo: BingoNumberRepository,
-        @inject(TYPES.BingoCardRepository) bingocardRepo: BingoCardRepository) {
+        @inject(TYPES.BingoCardRepository) bingocardRepo: BingoCardRepository,
+        @inject(TYPES.TypeCardWinnerRepository) typeCardWinnerRepo: TypeCardWinnerRepository,
+        @inject(TYPES.UserRepository) userRepository: UserRepository) {
         this.bingoNumberRepo = bingoNumberRepo;
         this.bingocardRepo = bingocardRepo;
+        this.typeCardWinnerRepo = typeCardWinnerRepo;
+        this.userRepository = userRepository;
     }
 
     @httpGet("/availables", TYPES.AuthMiddleware)
@@ -42,6 +50,18 @@ export class BingoNumberController {
         }
     }
 
+    @httpGet("/delete-number/:num", TYPES.AuthMiddleware)
+    public async deleteNumber(@request() req: express.Request, @response() res: express.response) {
+        try {
+            const { num } = req.params;
+            const data = await this.bingoNumberRepo.deleteNumber(num);
+            res.status(200).send(data);
+        }
+        catch (err) {
+            console.log(err)
+            res.status(400).json(err);
+        }
+    }
 
     @httpPost("/", TYPES.AuthMiddleware)
     public async create(@request() req: express.Request, @response() res: express.response) {
@@ -49,6 +69,8 @@ export class BingoNumberController {
             const { bingo_number } = req.body;
 
             const foundNumber = await this.bingoNumberRepo.isBingoNumberFound( bingo_number );
+            const typeCard = await this.typeCardWinnerRepo.findByDefault();
+            const user = await this.userRepository.findById( req.user.userID );
 
             if(foundNumber) {
                 return res.status(400).send({
@@ -63,7 +85,7 @@ export class BingoNumberController {
             const bingoNumbers = await this.bingoNumberRepo.getNumbers();
 
             const numbers_card = bingoNumbers.map(item => item.number);
-            const winners = await this.bingocardRepo.winnerReview(numbers_card);
+            const winners = await this.bingocardRepo.winnerReview(numbers_card, typeCard.id, user);
 
             if(winners.length == 0) {
                 res.status(200).send({
@@ -94,9 +116,11 @@ export class BingoNumberController {
     public async update(@request() req: express.Request, @response() res: express.response) {
         try {
             const { id } = req.params;
-            const { bingo_number, match_id } = req.body;
+            const { bingo_number } = req.body;
 
             const foundNumber = await this.bingoNumberRepo.isBingoNumberFound( bingo_number );
+            const typeCard = await this.typeCardWinnerRepo.findByDefault();
+            const user = await this.userRepository.findById( req.user.userID );
 
             if(foundNumber) {
                 return res.status(400).send({
@@ -111,7 +135,7 @@ export class BingoNumberController {
             const bingoNumbers = await this.bingoNumberRepo.getNumbers();
 
             const numbers_card = bingoNumbers.map(item => item.number);
-            const winners = await this.bingocardRepo.winnerReview(numbers_card, match_id);
+            const winners = await this.bingocardRepo.winnerReview(numbers_card, typeCard.id, user);
 
             if(winners.length == 0) {
                 res.status(200).send({

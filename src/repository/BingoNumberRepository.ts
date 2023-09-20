@@ -27,7 +27,17 @@ export class BingoNumberRepository{
     async getNumbers(){
         return await this.bingoNumberRepository.find();
     }
-
+    
+    async deleteNumber(num) {
+        const bingoNumberFound = await this.bingoNumberRepository.findOne(
+            { where: { number: num } }
+        );
+        
+        if (bingoNumberFound) {
+            await this.bingoNumberRepository.remove(bingoNumberFound);
+        }
+    }
+ 
     async clearNumbersFromMatch() {
         const result = await this.bingoNumberRepository
         .createQueryBuilder()

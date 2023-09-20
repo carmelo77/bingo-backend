@@ -2,55 +2,136 @@ import { IBingoCardModel } from "../types";
 import { AppDataSource } from "../config/data-source";
 import { BingoCard } from "../entity/BingoCard";
 import { injectable } from "inversify";
+import { Between, FindManyOptions } from "typeorm";
 
 @injectable()
-export class BingoCardRepository{
+export class BingoCardRepository {
     private bingocardRepository = AppDataSource.getRepository(BingoCard);
-    
-    async findAll(): Promise<BingoCard[]>{
+
+    async findAll(): Promise<BingoCard[]> {
         return await this.bingocardRepository.find({
             order: {
                 number_table: 'ASC'
             }
         });
     }
-    async findById(id: number): Promise<BingoCard | null>{
-        return await this.bingocardRepository.findOne({where: {id: id}});
+    async findById(id: number): Promise<BingoCard | null> {
+        return await this.bingocardRepository.findOne({ where: { id: id } });
     }
-    async findByNumberCard(number_card: number){
-        return await this.bingocardRepository.findOne({where: {number_table: number_card}});
+    async findByNumberCard(number_card: number) {
+        return await this.bingocardRepository.findOne({ where: { number_table: number_card } });
     }
-    async create(data: IBingoCardModel): Promise<BingoCard>{
+    async create(data: IBingoCardModel): Promise<BingoCard> {
         return await this.bingocardRepository.save(data);
     }
-    async update(id: number, data: IBingoCardModel): Promise<BingoCard>{
-        const dataToUpdate = await this.bingocardRepository.findOne({where: {id: id}})
-        return this.bingocardRepository.save({...dataToUpdate, ...data});
+    async update(id: number, data: IBingoCardModel): Promise<BingoCard> {
+        const dataToUpdate = await this.bingocardRepository.findOne({ where: { id: id } })
+        return this.bingocardRepository.save({ ...dataToUpdate, ...data });
     }
-    async remove(id: number): Promise<Boolean>{
+    async remove(id: number): Promise<Boolean> {
         // const dataToRemove = await this.bingocardRepository.findOne({where: {id: id}});
         // await this.bingocardRepository.remove(dataToRemove);
         const result = await this.bingocardRepository.delete(id);
         return result.affected == 1;
     }
 
-    async winnerReview(numbers_card: number[], typeCard: number = 1): Promise<{ bingo_card_id: number }[]> {
-        const bingo_cards = await this.bingocardRepository.find(); //Tomamos todos los cartones.
+    async winnerReview(numbers_card: number[], typeCard: number = 1, user): Promise<{ bingo_card_id: number }[]> {
+        let query: FindManyOptions = {};
+
+        if (user.from && user.to) {
+            query.where = {
+                number_table: Between(user.from, user.to)
+            };
+        }
+
+        const bingo_cards = await this.bingocardRepository.find(query);
         let winners = []; //Establecemos una variable de ganadores vacía.
 
-        if(numbers_card.length < 24) {
-            return winners;
-        }
+        // if(numbers_card.length < 24) {
+        //     return winners;
+        // }
 
         for (const card of bingo_cards) { //Recorremos todos los cartones que tenemos uno por uno.
             const values_card = card.values; //Tomamos especificamente el campo de los numeros de los cartones.
-            
-            if(typeCard == 1) { //Si el tipo de carton es igual a 1, es decir, cartón lleno.
+
+            if (typeCard == 1) { //Si el tipo de carton es igual a 1, es decir, cartón lleno.
                 // const fill_card_exist = numbers_card.every(num => values_card[num] != null); //Verificamos que carton lleno exista.
                 const fill_card_exist = values_card.every(num => numbers_card.includes(num));
 
-                if(fill_card_exist && !card.isSkip) { // Si existe cartón lleno.
+                if (fill_card_exist && !card.isSkip) { // Si existe cartón lleno.
                     winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del carton que ganó.
+                }
+            } else if (typeCard == 2) { // Si el tipo de cartón es igual a 2. O pequeña
+                const indexToCheck = [6, 7, 8, 11, 12, 15, 16, 17]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 3) { // Si el tipo de cartón es igual a 3. T
+                const indexToCheck = [0, 1, 2, 3, 4, 7, 16, 21]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 4) { // Si el tipo de cartón es igual a 4. O grande
+                const indexToCheck = [0, 1, 2, 3, 4, 5, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 5) { // Si el tipo de cartón es igual a 5. Letra G
+                const indexToCheck = [0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 18, 19, 20, 21, 22, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 6) { // Si el tipo de cartón es igual a 6. Cruz
+                const indexToCheck = [2, 7, 10, 11, 12, 13, 16, 21]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 7) { // Si el tipo de cartón es igual a 7. Letra C
+                const indexToCheck = [0, 1, 2, 3, 4, 5, 10, 14, 19, 20, 21, 22, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 8) { // Si el tipo de cartón es igual a 8. Letra L
+                const indexToCheck = [0, 5, 10, 14, 19, 20, 21, 22, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 9) { // Si el tipo de cartón es igual a 9. Letra X
+                const indexToCheck = [0, 4, 6, 8, 15, 17, 19, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
+                }
+            } else if (typeCard == 10) { // Si el tipo de cartón es igual a 10. Letra H
+                const indexToCheck = [0, 4, 5, 9, 10, 11, 12, 13, 14, 18, 19, 23]; // Índices específicos a revisar
+
+                const fill_card_exist = indexToCheck.every(index => values_card[index] != null && numbers_card.includes(values_card[index]));
+
+                if (fill_card_exist && !card.isSkip) { // Si existen los números ganadores en los índices específicos.
+                    winners.push({ bingo_card_id: card.number_table }); // Colocamos la partida y id del cartón que ganó.
                 }
             }
         }
@@ -58,12 +139,12 @@ export class BingoCardRepository{
         return winners; // Y lo retornamos.
     }
 
-    async isSkipTrue(number_table: number): Promise<void>{
+    async isSkipTrue(number_table: number): Promise<void> {
         await this.bingocardRepository.update({ number_table }, { isSkip: true });
     }
 
-    async isSkipFalse(): Promise<void>{
+    async isSkipFalse(): Promise<void> {
         await this.bingocardRepository.update({}, { isSkip: false });
     }
-    
+
 }

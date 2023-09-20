@@ -8,10 +8,24 @@ export class TypeCardWinnerRepository{
     private typecardRepository = AppDataSource.getRepository(TypeCardWinner);
     
     async findAll(){
-        return await this.typecardRepository.find();
+        return await this.typecardRepository.find({
+            order: {
+                id: 'ASC'
+            }
+        });
     }
     async findById(id: number){
         return await this.typecardRepository.findOne({where: {id: id}});
+    }
+    async findByDefault(){
+        return await this.typecardRepository.findOne({where: {default: true}});
+    }
+    async activate(id: number){
+        await this.typecardRepository.update({}, { default: false });
+
+        const dataToUpdate = await this.typecardRepository.findOne({where: {id: id}})
+        dataToUpdate.default = true;
+        return this.typecardRepository.save(dataToUpdate);
     }
     async create(data: ITypeCardWinnerModel){
         return await this.typecardRepository.save(data);

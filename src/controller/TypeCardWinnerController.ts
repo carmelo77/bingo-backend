@@ -2,6 +2,7 @@ import { TYPES } from "../types/";
 import * as express from 'express';
 import { controller, httpGet, httpPost, request, response, queryParam, httpPut, httpDelete } from "inversify-express-utils";
 import { TypeCardWinnerRepository } from "../repository/TypeCardWinnerRepository";
+import { BingoNumberRepository } from "../repository/BingoNumberRepository";
 import { inject } from "inversify";
 
 @controller("/type-card-winner")
@@ -9,13 +10,16 @@ import { inject } from "inversify";
 export class TypeCardWinnerController {
 
     private typeCardWinnerRepository: TypeCardWinnerRepository;
+    private bingoNumbersRepository: BingoNumberRepository;
 
     constructor(
-        @inject(TYPES.TypeCardWinnerRepository) typeCardWinnerRepository: TypeCardWinnerRepository) {
+        @inject(TYPES.TypeCardWinnerRepository) typeCardWinnerRepository: TypeCardWinnerRepository,
+        @inject(TYPES.BingoNumberRepository) bingoNumbersRepository: BingoNumberRepository) {
         this.typeCardWinnerRepository = typeCardWinnerRepository;
+        this.bingoNumbersRepository = bingoNumbersRepository;
     }
 
-    @httpGet("/data",TYPES.AuthAdminMiddleware)
+    @httpGet("/data",TYPES.AuthMiddleware)
     public async index(@request() req: express.Request, @response() res: express.response) {
         try {
             const data = await this.typeCardWinnerRepository.findAll();
@@ -23,6 +27,25 @@ export class TypeCardWinnerController {
         }
         catch (err) {
             res.status(500).json(err);
+        }
+    }
+
+    @httpGet("/activate", TYPES.AuthMiddleware)
+    public async activateOne(@queryParam("id") id: number, @response() res: express.response) {
+        const find = await this.bingoNumbersRepository.getNumbers();
+
+            if (find.length) {
+                return res.status(400).send({
+                    message: 'Para cambiar el tipo de tabla ganadora debes resetear los números primero.'
+                })
+            }
+        
+        try {
+            const data = await this.typeCardWinnerRepository.activate(id);
+            res.status(200).send(data);
+        }
+        catch (err) {
+            res.status(400).json(err);
         }
     }
 

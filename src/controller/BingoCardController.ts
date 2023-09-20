@@ -4,6 +4,7 @@ import * as multer from 'multer';
 import * as XLSX from 'xlsx';
 import { controller, httpGet, httpPost, request, response, queryParam, httpPut, httpDelete } from "inversify-express-utils";
 import { BingoCardRepository } from "../repository/BingoCardRepository";
+import { UserRepository } from "../repository/UserRepository";
 import { inject } from "inversify";
 
 const upload = multer().single('file');
@@ -13,10 +14,13 @@ const upload = multer().single('file');
 export class BingoCardController {
 
     private bingoCardRepo: BingoCardRepository;
+    private userRepository: UserRepository;
 
     constructor(
-        @inject(TYPES.BingoCardRepository) bingoCardRepo: BingoCardRepository) {
+        @inject(TYPES.BingoCardRepository) bingoCardRepo: BingoCardRepository,
+        @inject(TYPES.UserRepository) userRepository: UserRepository) {
         this.bingoCardRepo = bingoCardRepo;
+        this.userRepository = userRepository;
     }
 
     @httpGet("/data", TYPES.AuthMiddleware)
@@ -109,82 +113,99 @@ export class BingoCardController {
     }
 
     @httpPost("/upload", TYPES.AuthAdminMiddleware)
-public async upload(@request() req: express.Request, @response() res: express.response) {
-    try {
-        // Verificar si se ha subido un archivo
+    public async upload(@request() req: express.Request, @response() res: express.response) {
+        try {
+            // Verificar si se ha subido un archivo
 
-        const fileUploadPromise = new Promise<void>((resolve, reject) => {
-            upload(req, res, (err) => {
-                if (err) {
-                    console.error(err);
-                    reject(err);
-                }
-
-                if (!req.file) {
-                    reject(new Error('No se ha proporcionado ningún archivo'));
-                }
-
-                const fileBuffer = req.file.buffer;
-
-                // Leer el archivo Excel desde el buffer
-                const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-                // Recorrer cada celda del archivo Excel en orden horizontal
-                const range = XLSX.utils.decode_range(worksheet['!ref']);
-                const firstElements = [];
-                const restElements = [];
-                for (let row = range.s.r + 1; row <= range.e.r; row++) {
-                    const firstCellAddress = XLSX.utils.encode_cell({ r: row, c: range.s.c });
-                    const firstCellValue = worksheet[firstCellAddress]?.v;
-                    firstElements.push(firstCellValue);
-                    const rowData = [];
-                    for (let col = range.s.c + 1; col <= range.e.c - 1; col++) {
-                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                        const cellValue = worksheet[cellAddress]?.v;
-                        rowData.push(cellValue);
+            const fileUploadPromise = new Promise<void>((resolve, reject) => {
+                upload(req, res, (err) => {
+                    if (err) {
+                        console.error(err);
+                        reject(err);
                     }
-                    restElements.push(rowData);
-                }
 
-                // Imprimir los datos en el formato solicitado
-                const processData = async (): Promise<void> => {
-                    for (let i = 0; i < firstElements.length; i++) {
-                        const firstElement = firstElements[i];
-                        const restData = restElements[i].join(', ');
-                        console.log(`${firstElement}: restantes: [${restData}]`);
+                    if (!req.file) {
+                        reject(new Error('No se ha proporcionado ningún archivo'));
+                    }
 
-                        const find = await this.bingoCardRepo.findByNumberCard(firstElement);
+                    const fileBuffer = req.file.buffer;
 
-                        if (find) {
-                            continue;
+                    // Leer el archivo Excel desde el buffer
+                    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                    // Recorrer cada celda del archivo Excel en orden horizontal
+                    const range = XLSX.utils.decode_range(worksheet['!ref']);
+                    const firstElements = [];
+                    const restElements = [];
+                    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                        const firstCellAddress = XLSX.utils.encode_cell({ r: row, c: range.s.c });
+                        const firstCellValue = worksheet[firstCellAddress]?.v;
+                        firstElements.push(firstCellValue);
+                        const rowData = [];
+                        for (let col = range.s.c + 1; col <= range.e.c - 1; col++) {
+                            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                            const cellValue = worksheet[cellAddress]?.v;
+                            rowData.push(cellValue);
                         }
-
-                        const values = restData.split(',').map(value => Number(value));
-
-                        await this.bingoCardRepo.create({
-                            number_table: firstElement,
-                            values,
-                            isSkip: false
-                        });
+                        restElements.push(rowData);
                     }
-                };
 
-                processData()
-                    .then(() => resolve())
-                    .catch((err) => reject(err));
+                    // Imprimir los datos en el formato solicitado
+                    const processData = async (): Promise<void> => {
+                        for (let i = 0; i < firstElements.length; i++) {
+                            const firstElement = firstElements[i];
+                            const restData = restElements[i].join(', ');
+                            console.log(`${firstElement}: restantes: [${restData}]`);
+
+                            const find = await this.bingoCardRepo.findByNumberCard(firstElement);
+
+                            if (find) {
+                                continue;
+                            }
+
+                            const values = restData.split(',').map(value => Number(value));
+
+                            await this.bingoCardRepo.create({
+                                number_table: firstElement,
+                                values,
+                                isSkip: false
+                            });
+                        }
+                    };
+
+                    processData()
+                        .then(() => resolve())
+                        .catch((err) => reject(err));
+                });
             });
-        });
 
-        await fileUploadPromise; // Esperar a que se complete la carga de archivos
+            await fileUploadPromise; // Esperar a que se complete la carga de archivos
 
-        res.status(200).send('Excel procesado correctamente');
-    } catch (err) {
-        console.log(err);
-        res.status(500).send(err);
+            res.status(200).send('Excel procesado correctamente');
+        } catch (err) {
+            console.log(err);
+            res.status(500).send(err);
+        }
     }
-}
 
+    @httpGet("/search-number-table-valid", TYPES.AuthMiddleware)
+    public async validateSearchTable(@queryParam("number_card") number_card: number, @request() req: express.Request, @response() res: express.response) {
+        try {
+            const user = await this.userRepository.findById( req.user.userID );
+
+            if(user.from && user.to) {
+                if(number_card < user.from || number_card > user.to) {
+                    res.status(200).send({ success: false });
+                }
+            }
+
+            res.status(200).send({ success: true });
+        }
+        catch (err) {
+            res.status(400).json(err);
+        }
+    }
 
 
 }

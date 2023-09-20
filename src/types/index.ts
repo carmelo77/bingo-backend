@@ -6,6 +6,8 @@ export interface IUserModel {
     phone: string
     document: string
     role?: IRoleModel
+    from?: number
+    to?: number
 }
 
 export interface IRoleModel {

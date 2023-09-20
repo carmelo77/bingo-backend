@@ -21,7 +21,7 @@ export class TypeCardWinner {
     reward: string
 
     @Column({ default: false })
-    default: string
+    default: boolean
 
     @CreateDateColumn()
     created_at: Date

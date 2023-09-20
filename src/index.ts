@@ -33,10 +33,18 @@ AppDataSource.initialize().then(async () => {
         }
     });
     io.on("connection", (socket) => {
-        socket.on("NewBingoNumberByMatch", ({ number }) => {
+        socket.on("NewBingoNumberByMatch", ({ number, typeCard }) => {
             // console.log(`Nuevo número de bingo: ${number} para la partida ${matchId}`);
             // Emitir el número de bingo a todos los clientes conectados
-            io.emit("NewBingoNumberByMatch", { number });
+            io.emit("NewBingoNumberByMatch", { number, typeCard });
+        });
+
+        socket.on("deleteWrongNumber", ( number ) => {
+            io.emit("deleteWrongNumber", { number: number });
+        });
+
+        socket.on("resetAll", () => {
+            io.emit("resetAll");
         });
 
         socket.on("BingoNumberWin", ({ number }) => {

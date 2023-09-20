@@ -57,7 +57,7 @@ export class UserController {
     @httpPost("/", TYPES.AuthAdminMiddleware)
     public async create(@request() req: express.Request, @response() res: express.response) {
         try {
-            const { name, lastname, email, phone, document, role_id } = req.body;
+            const { name, lastname, email, phone, document, role_id, from, to } = req.body;
             let { password } = req.body;
             password = await bcrypt.hash(password, 10);
 
@@ -67,7 +67,9 @@ export class UserController {
                 email, 
                 phone, 
                 password,
-                document
+                document,
+                from,
+                to
             });
             result.role = await this.roleRepo.findById(role_id);
 
@@ -83,7 +85,7 @@ export class UserController {
     public async update(@request() req: express.Request, @response() res: express.response) {
         try {
             const { id } = req.params;
-            const { name, lastname, email, phone, role_id, document } = req.body;
+            const { name, lastname, email, phone, role_id, document, from, to } = req.body;
             let { password } = req.body;
 
             
@@ -93,7 +95,9 @@ export class UserController {
                 email, 
                 phone, 
                 // password,
-                document
+                document,
+                from,
+                to
             });
 
             if(password != '') {
