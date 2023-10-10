@@ -1,0 +1,10 @@
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	1,'CARTON LLENO','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	2,'o PEQUEÑA','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	3,'LETRA T','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	4,'O GRANDE','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	5,'LETRAG','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	6,'EN +','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	7,'EN C','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	8,'EN L','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	9,'EN X','false');
+INSERT INTO public.type_card_winner(id, name,"default")VALUES (	10,'EN H','false');
