@@ -6,3 +6,4 @@ tmp/
 temp/
 nohup.out
 package-lock.json
+.env
