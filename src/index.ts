@@ -22,7 +22,7 @@ AppDataSource.initialize().then(async () => {
     const server =  new InversifyExpressServer(container, null, { rootPath: "/" }, app);
 
     const appConfigured = server.build();
-    const serve = appConfigured.listen(port, () => console.log(`App running on ${serve.address().port}`));
+    const serve = appConfigured.listen(port, () => console.log(`App running on`, serve.address()));
 
 
     // const io = new Server(serve);
