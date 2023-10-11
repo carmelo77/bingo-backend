@@ -6,8 +6,6 @@ import * as os from "os";
 // create express app
 const app = express()
 
-const staticPort = 3050;
-const port = process.env.PORT || staticPort;
 
 // Configuración de CORS
 app.use(function(req, res, next) {
@@ -24,8 +22,12 @@ const serverIP = Object.values(os.networkInterfaces())
   )
   .find((iface) => iface !== undefined)?.address;
 
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
 console.log("Server IP:", serverIP);
-console.log({port});
 
 app.use(bodyParser.json());
 app.use(cors());
