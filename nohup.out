@@ -1,0 +1,7 @@
+
+> bingo@1.0.0 start
+> ts-node-dev --respawn src/index.ts
+
+[INFO] 04:26:48 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.7.0, typescript ver. 4.5.2)
+{ port: '3050' }
+App running on 3050
