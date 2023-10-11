@@ -8,6 +8,14 @@ const app = express()
 
 const staticPort = 3050;
 const port = process.env.PORT || staticPort;
+
+// Configuración de CORS
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 const serverIP = Object.values(os.networkInterfaces())
   .map((interfaces: any) =>
     interfaces.find(
